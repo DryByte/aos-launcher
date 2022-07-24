@@ -9,8 +9,11 @@ struct Server {
 	char map[32];
 	char game_mode[16];
 	char country[3];
+	int players_current;
+	int players_max;
 };
 
+void join_to_server();
 void draw_serverlist();
 void serverlist_scene_init();
 void get_serverlist();
