@@ -78,15 +78,20 @@ void draw_serverlist(struct Server* servers) {
 	}
 }
 
-void serverlist_scene_init() {
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &termsize);
-
+struct Server* load_servers() {
 	get_serverlist();
 
 	json_object* root = json_tokener_parse(str_serverlist);
 	json_object_array_sort(root, sort_by_playercount);
 	struct Server* servers = get_servers_array(root);
 
+	return servers;
+}
+
+void serverlist_scene_init() {
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &termsize);
+
+	struct Server* servers = load_servers();
 	serverlist_loop(servers);
 
 	free(servers);
@@ -95,7 +100,7 @@ void serverlist_scene_init() {
 void serverlist_loop(struct Server* servers) {
 	int disable_handler = 0;
 	while(1) {
-		int option;
+		char option;
 		printf("\033[H\033[J");
 		draw_serverlist(servers);
 
@@ -109,15 +114,24 @@ void serverlist_loop(struct Server* servers) {
 				while(read(STDIN_FILENO, &option, 1) < 1);
 		}
 
-		// up
-		if (option == 65) {
-			selected_server--;
-		// down
-		} else if (option == 66) {
-			selected_server++;
-		// enter
-		} else if (option == 10) {
-			join_to_server(servers[selected_server]);
+		switch (option) {
+			case 'r':
+				printf("\033[H\033[J");
+				printf("Reloading...\n");
+				servers = load_servers();
+				break;
+			// enter
+			case 10:
+				join_to_server(servers[selected_server]);
+				break;
+			// up
+			case 65:
+				selected_server--;
+				break;
+			// down
+			case 66:
+				selected_server++;
+				break;
 		}
 
 		if (selected_server < 0){
